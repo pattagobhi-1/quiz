@@ -2,168 +2,173 @@
 
 @layer base {
   :root {
-    --snow-white: #FAFBFF;
-    --pearl-gray: #F0F2F8;
-    --mist-lilac: #E8EAF4;
-    --soft-slate: #CBD0E0;
-    --cloud-blue: #A8B0CC;
-    --twilight-violet: #6E7599;
-    --deep-navy: #2D3250;
-    --midnight-ink: #1B1F3B;
-    --accent-indigo: #5B6BC0;
-    --accent-violet: #7C4DFF;
-    --accent-lavender: #B39DDB;
-    --accent-coral: #FF7A8A;
-    --accent-mint: #4DD0A1;
-    --warm-gold: #F0C45A;
+    /* Core Samavaya Palette */
+    --midnight-indigo: #1E0D33;
+    --royal-plum: #31124A;
+    --deep-orchid: #4C1B56;
+    --smoky-violet: #543C5B;
+    --muted-raspberry: #8B4A5A;
+    --terracotta-sunset: #D27D4F;
+    --champagne-gold: #EEC37D;
+    --saffron-cream: #FBE0A4;
+    --warm-ivory: #FDF2E5;
+
+    /* Extended Palette */
+    --lilac-mist: #E1DAE9;
+    --blush-cloud: #F9E8E0;
+    --peach-haze: #FBEEE1;
+    --pale-sunlight: #FEF3C6;
+    --magenta-accent: #B00070;
+    --burnt-copper: #A06451;
   }
 
   body {
     margin: 0;
     padding: 0;
-    background-color: #F0F2F8;
-    color: #2D3250;
+    background-color: #FDF2E5;
+    color: #31124A;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     overflow-x: hidden;
     letter-spacing: -0.01em;
   }
 }
 
-/* Minimalist Samavaya Gradient Utilities — Light Mode */
+/* ───── Samavaya Pastel Background ───── */
 .samavaya-bg {
-  background: linear-gradient(180deg, #FAFBFF 0%, #F0F2F8 40%, #E8EAF4 100%);
+  background: linear-gradient(170deg, #E8DFF2 0%, #F5E8E0 30%, #FBEEE1 60%, #FDF2E5 100%);
 }
 
+/* ───── Glass Cards ───── */
 .samavaya-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(91, 107, 192, 0.15);
-  box-shadow: 0 4px 24px 0 rgba(45, 50, 80, 0.06);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(238, 195, 125, 0.22);
+  box-shadow: 0 4px 24px 0 rgba(30, 13, 51, 0.05), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
 }
 
 .samavaya-card-subtle {
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(91, 107, 192, 0.10);
+  border: 1px solid rgba(238, 195, 125, 0.14);
 }
 
-/* Typography Gradient */
+/* ───── Typography Gradients ───── */
 .text-gold-gradient {
-  background: linear-gradient(135deg, #5B6BC0 0%, #7C4DFF 50%, #9575CD 100%);
+  background: linear-gradient(135deg, #A06451 0%, #D27D4F 35%, #EEC37D 70%, #FBE0A4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .text-gold-metallic {
-  background: linear-gradient(180deg, #5B6BC0 0%, #7C4DFF 50%, #9575CD 100%);
+  background: linear-gradient(180deg, #D27D4F 0%, #EEC37D 50%, #FBE0A4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .text-purple-gradient {
-  background: linear-gradient(135deg, #2D3250 0%, #5B6BC0 50%, #9575CD 100%);
+  background: linear-gradient(135deg, #1E0D33 0%, #4C1B56 50%, #8B4A5A 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* Minimalist Quiz Option Buttons */
+/* ───── Quiz Option Buttons (Pastel Samavaya) ───── */
 .quiz-option-minimal {
   position: relative;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(91, 107, 192, 0.18);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(238, 195, 125, 0.22);
   border-radius: 14px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  color: #2D3250;
+  color: #31124A;
 }
 
 .quiz-option-minimal:hover:not(:disabled) {
-  background: rgba(232, 234, 244, 0.9);
-  border-color: rgba(91, 107, 192, 0.5);
-  box-shadow: 0 2px 16px rgba(91, 107, 192, 0.12);
+  background: rgba(251, 224, 164, 0.2);
+  border-color: rgba(238, 195, 125, 0.55);
+  box-shadow: 0 2px 16px rgba(210, 125, 79, 0.1);
   transform: translateY(-1px);
 }
 
 .quiz-option-minimal.selected {
-  background: linear-gradient(135deg, rgba(124, 77, 255, 0.08) 0%, rgba(91, 107, 192, 0.12) 100%);
-  border-color: #7C4DFF;
-  box-shadow: 0 0 20px rgba(124, 77, 255, 0.15);
+  background: linear-gradient(135deg, rgba(238, 195, 125, 0.12) 0%, rgba(251, 224, 164, 0.18) 100%);
+  border-color: #EEC37D;
+  box-shadow: 0 0 20px rgba(238, 195, 125, 0.18);
 }
 
 .quiz-option-minimal.locked {
-  background: linear-gradient(135deg, rgba(124, 77, 255, 0.12) 0%, rgba(91, 107, 192, 0.15) 100%);
-  border-color: #5B6BC0;
+  background: linear-gradient(135deg, rgba(210, 125, 79, 0.1) 0%, rgba(238, 195, 125, 0.15) 100%);
+  border-color: #D27D4F;
   animation: pulse-minimal-lock 1.5s infinite alternate ease-in-out;
 }
 
 .quiz-option-minimal.correct {
-  background: linear-gradient(135deg, rgba(77, 208, 161, 0.15) 0%, rgba(77, 208, 161, 0.25) 100%) !important;
-  border-color: #4DD0A1 !important;
-  box-shadow: 0 0 20px rgba(77, 208, 161, 0.2) !important;
+  background: linear-gradient(135deg, rgba(102, 187, 106, 0.12) 0%, rgba(102, 187, 106, 0.22) 100%) !important;
+  border-color: #66BB6A !important;
+  box-shadow: 0 0 20px rgba(102, 187, 106, 0.18) !important;
 }
 
 .quiz-option-minimal.wrong {
-  background: linear-gradient(135deg, rgba(255, 122, 138, 0.12) 0%, rgba(255, 122, 138, 0.2) 100%) !important;
-  border-color: #FF7A8A !important;
-  box-shadow: 0 0 20px rgba(255, 122, 138, 0.15) !important;
+  background: linear-gradient(135deg, rgba(176, 0, 112, 0.08) 0%, rgba(176, 0, 112, 0.14) 100%) !important;
+  border-color: #B00070 !important;
+  box-shadow: 0 0 20px rgba(176, 0, 112, 0.12) !important;
 }
 
-/* Minimalist Question Container */
+/* ───── Question Container ───── */
 .quiz-question-minimal {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(91, 107, 192, 0.2);
+  border: 1px solid rgba(238, 195, 125, 0.25);
   border-radius: 20px;
-  box-shadow: 0 6px 32px rgba(45, 50, 80, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow: 0 6px 32px rgba(30, 13, 51, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
-/* Primary Action Button */
+/* ───── Primary Action Button (Premium Gold) ───── */
 .btn-gold-primary {
-  background: linear-gradient(135deg, #7C4DFF 0%, #5B6BC0 50%, #9575CD 100%);
+  background: linear-gradient(135deg, #A06451 0%, #D27D4F 40%, #EEC37D 100%);
   color: #FFFFFF;
   font-weight: 700;
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(124, 77, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(210, 125, 79, 0.22);
   transition: all 0.2s ease;
 }
 
 .btn-gold-primary:hover {
   filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(124, 77, 255, 0.3);
+  box-shadow: 0 6px 22px rgba(210, 125, 79, 0.32);
 }
 
-/* Secondary Action Button */
+/* ───── Secondary Button ───── */
 .btn-purple-secondary {
-  background: rgba(91, 107, 192, 0.1);
-  border: 1px solid rgba(91, 107, 192, 0.2);
-  color: #2D3250;
+  background: rgba(76, 27, 86, 0.06);
+  border: 1px solid rgba(76, 27, 86, 0.14);
+  color: #31124A;
   border-radius: 12px;
   transition: all 0.2s ease;
 }
 
 .btn-purple-secondary:hover {
-  background: rgba(91, 107, 192, 0.18);
-  border-color: rgba(91, 107, 192, 0.4);
-  color: #1B1F3B;
+  background: rgba(76, 27, 86, 0.12);
+  border-color: rgba(76, 27, 86, 0.3);
+  color: #1E0D33;
 }
 
 @keyframes pulse-minimal-lock {
-  0% { box-shadow: 0 0 12px rgba(91, 107, 192, 0.2); }
-  100% { box-shadow: 0 0 24px rgba(91, 107, 192, 0.4); }
+  0% { box-shadow: 0 0 12px rgba(210, 125, 79, 0.18); }
+  100% { box-shadow: 0 0 24px rgba(210, 125, 79, 0.35); }
 }
 
-/* Sleek Minimalist Scrollbar — Light */
+/* ───── Sleek Scrollbar (Warm) ───── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F0F2F8;
+  background: #FBEEE1;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD0E0;
+  background: #E1C8B8;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #A8B0CC;
+  background: #D27D4F;
 }

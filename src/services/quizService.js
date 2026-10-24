@@ -17,7 +17,7 @@ const syncChannel = typeof window !== 'undefined' && window.BroadcastChannel
   : null;
 
 export const INITIAL_GAME_STATE = {
-  status: "LOBBY", // LOBBY | QUESTION_ACTIVE | ANSWER_LOCKED | ANSWER_REVEALED | LEADERBOARD | COMPLETED
+  status: "LOBBY",
   currentQuestionIndex: 0,
   activeQuestionId: "q-1",
   timerStartedAt: null,
@@ -29,15 +29,20 @@ export const INITIAL_GAME_STATE = {
   updatedAt: Date.now()
 };
 
-// The canonical admin password — only the hash is ever stored
-const DEFAULT_ADMIN_PASS = "adm-sjc-79856";
+// ─── Admin Password ───
+// The canonical password. Only the SHA-256 hash is stored.
+// Bump CURRENT_PW_VERSION whenever DEFAULT_ADMIN_PASS changes
+// to force automatic migration on all clients & Firestore.
+const DEFAULT_ADMIN_PASS = "josephest";
+const CURRENT_PW_VERSION = 3;
 
 const KEYS = {
   GAME_STATE: "quiz_local_game_state",
   QUESTIONS: "quiz_local_questions",
   USERS: "quiz_local_users",
   RESPONSES: "quiz_local_responses",
-  ADMIN_PASSWORD_HASH: "quiz_local_admin_password_hash"
+  ADMIN_PASSWORD_HASH: "quiz_local_admin_pw_hash",
+  ADMIN_PW_VERSION: "quiz_local_admin_pw_version"
 };
 
 function getLocal(key, defaultValue) {
@@ -68,59 +73,74 @@ if (!localStorage.getItem(KEYS.GAME_STATE)) {
   localStorage.setItem(KEYS.GAME_STATE, JSON.stringify(INITIAL_GAME_STATE));
 }
 
-// Seed admin password hash on first run (async, fire-and-forget)
+// ─── Seed / Migrate admin password hash on boot ───
 (async function seedAdminPasswordHash() {
-  const existing = getLocal(KEYS.ADMIN_PASSWORD_HASH, null);
-  // If no hash exists, or it's the old plain text format (< 64 chars), migrate
-  if (!existing || existing.length < 64) {
+  const existingVersion = getLocal(KEYS.ADMIN_PW_VERSION, 0);
+  if (existingVersion < CURRENT_PW_VERSION) {
     const hash = await hashPassword(DEFAULT_ADMIN_PASS);
     setLocal(KEYS.ADMIN_PASSWORD_HASH, hash);
+    setLocal(KEYS.ADMIN_PW_VERSION, CURRENT_PW_VERSION);
 
-    // Also seed Firestore if connected
     if (isFirebaseActive && db) {
       try {
-        await setDoc(doc(db, "kbc_system", "settings"), { adminPasswordHash: hash }, { merge: true });
+        await setDoc(doc(db, "kbc_system", "settings"), {
+          adminPasswordHash: hash,
+          adminPwVersion: CURRENT_PW_VERSION
+        }, { merge: true });
+        console.log("Admin password hash migrated to version", CURRENT_PW_VERSION);
       } catch (e) {
-        console.warn("Failed to seed admin password hash in Firestore:", e);
+        console.warn("Failed to migrate admin password hash in Firestore:", e);
       }
     }
   }
 })();
 
 // -------------------------------------------------------------
-// 1. ADMIN PASSWORD HASH MANAGEMENT (Read-only from client)
+// 1. ADMIN PASSWORD HASH (Read-only from client)
 // -------------------------------------------------------------
 export function subscribeAdminPasswordHash(callback) {
   if (isFirebaseActive && db) {
     const unsub = onSnapshot(doc(db, "kbc_system", "settings"), async (docSnap) => {
-      if (docSnap.exists() && docSnap.data().adminPasswordHash) {
-        callback(docSnap.data().adminPasswordHash);
+      const data = docSnap.exists() ? docSnap.data() : {};
+
+      if (data.adminPwVersion === CURRENT_PW_VERSION && data.adminPasswordHash) {
+        // Hash is current
+        callback(data.adminPasswordHash);
       } else {
-        // No hash in Firestore — compute and store
+        // Version mismatch or missing — migrate
         const hash = await hashPassword(DEFAULT_ADMIN_PASS);
-        setDoc(doc(db, "kbc_system", "settings"), { adminPasswordHash: hash }, { merge: true });
+        await setDoc(doc(db, "kbc_system", "settings"), {
+          adminPasswordHash: hash,
+          adminPwVersion: CURRENT_PW_VERSION
+        }, { merge: true });
         callback(hash);
       }
     }, async (err) => {
       console.warn("Firestore admin settings snapshot error:", err);
       // Fallback to local
-      let hash = getLocal(KEYS.ADMIN_PASSWORD_HASH, null);
-      if (!hash || hash.length < 64) {
-        hash = await hashPassword(DEFAULT_ADMIN_PASS);
+      const existingVersion = getLocal(KEYS.ADMIN_PW_VERSION, 0);
+      if (existingVersion < CURRENT_PW_VERSION) {
+        const hash = await hashPassword(DEFAULT_ADMIN_PASS);
         setLocal(KEYS.ADMIN_PASSWORD_HASH, hash);
+        setLocal(KEYS.ADMIN_PW_VERSION, CURRENT_PW_VERSION);
+        callback(hash);
+      } else {
+        callback(getLocal(KEYS.ADMIN_PASSWORD_HASH, null));
       }
-      callback(hash);
     });
     return unsub;
   } else {
-    // Local mode
+    // Local-only mode
     (async () => {
-      let hash = getLocal(KEYS.ADMIN_PASSWORD_HASH, null);
-      if (!hash || hash.length < 64) {
-        hash = await hashPassword(DEFAULT_ADMIN_PASS);
+      const existingVersion = getLocal(KEYS.ADMIN_PW_VERSION, 0);
+      if (existingVersion < CURRENT_PW_VERSION) {
+        const hash = await hashPassword(DEFAULT_ADMIN_PASS);
         setLocal(KEYS.ADMIN_PASSWORD_HASH, hash);
+        setLocal(KEYS.ADMIN_PW_VERSION, CURRENT_PW_VERSION);
+        callback(hash);
+      } else {
+        callback(getLocal(KEYS.ADMIN_PASSWORD_HASH, null));
       }
-      callback(hash);
     })();
 
     const handleMessage = (e) => {
@@ -134,11 +154,6 @@ export function subscribeAdminPasswordHash(callback) {
     };
   }
 }
-
-// NOTE: updateAdminPassword has been removed.
-// The admin password can only be changed by directly modifying the
-// Firestore document "kbc_system/settings" > adminPasswordHash field
-// with a new SHA-256 hash. This prevents UI-level password changes.
 
 // -------------------------------------------------------------
 // 2. GAME STATE SUBSCRIPTION & UPDATES
@@ -250,7 +265,7 @@ export async function saveQuestions(questionsList) {
 }
 
 // -------------------------------------------------------------
-// 4. TEAM PARTICIPANTS (Added strictly by Admin)
+// 4. TEAM PARTICIPANTS
 // -------------------------------------------------------------
 export function subscribeParticipants(callback) {
   if (isFirebaseActive && db) {
@@ -292,13 +307,11 @@ function fallbackUsersSync(callback) {
   };
 }
 
-// Admin-only: Register single team
 export async function registerOrUpdateUser(user) {
   const users = getLocal(KEYS.USERS, []);
   const usernameClean = user.username.trim().toLowerCase();
   const idx = users.findIndex(u => u.username.toLowerCase() === usernameClean);
-  let updatedUsers;
-  
+
   const userData = {
     username: usernameClean,
     password: user.password,
@@ -311,6 +324,7 @@ export async function registerOrUpdateUser(user) {
     createdAt: Date.now()
   };
 
+  let updatedUsers;
   if (idx >= 0) {
     users[idx] = { ...users[idx], ...userData };
     updatedUsers = [...users];
@@ -331,7 +345,6 @@ export async function registerOrUpdateUser(user) {
   return userData;
 }
 
-// Admin-only: Bulk create teams
 export async function bulkRegisterUsers(newUsersList) {
   const currentUsers = getLocal(KEYS.USERS, []);
   const userMap = new Map();
@@ -380,7 +393,6 @@ export async function bulkRegisterUsers(newUsersList) {
   return merged;
 }
 
-// Admin-only: Delete team account
 export async function deleteUserAccount(username) {
   const usernameClean = username.trim().toLowerCase();
   let users = getLocal(KEYS.USERS, []);
@@ -396,7 +408,6 @@ export async function deleteUserAccount(username) {
   }
 }
 
-// Admin-only: Reset all scores
 export async function resetAllScores() {
   let users = getLocal(KEYS.USERS, []);
   users = users.map(u => ({
@@ -473,26 +484,20 @@ export async function submitParticipantAnswer({ userId, username, questionId, se
   }
 
   const submission = {
-    userId,
-    username,
-    selectedOption,
-    timeTakenMs,
-    isCorrect,
-    pointsEarned,
-    submittedAt: Date.now()
+    userId, username, selectedOption, timeTakenMs,
+    isCorrect, pointsEarned, submittedAt: Date.now()
   };
 
   allResponses[questionId][username.toLowerCase()] = submission;
   setLocal(KEYS.RESPONSES, allResponses);
 
-  // Update participant score
   const users = getLocal(KEYS.USERS, []);
   const idx = users.findIndex(u => u.username.toLowerCase() === username.toLowerCase());
   if (idx >= 0) {
     const user = users[idx];
     const newScore = isCorrect ? (user.score || 0) + pointsEarned : (user.score || 0);
     const newLevel = isCorrect ? (user.currentLevel || 1) + 1 : (user.currentLevel || 1);
-    
+
     users[idx] = {
       ...user,
       score: newScore,
@@ -505,9 +510,7 @@ export async function submitParticipantAnswer({ userId, username, questionId, se
     if (isFirebaseActive && db) {
       try {
         await updateDoc(doc(db, "kbc_users", username.toLowerCase()), {
-          score: newScore,
-          currentLevel: newLevel,
-          lastAnswer: submission
+          score: newScore, currentLevel: newLevel, lastAnswer: submission
         });
       } catch (e) {
         console.error("Firestore user score update error", e);
@@ -540,9 +543,7 @@ export async function markLifelineUsed(username, lifelineType) {
 
     if (isFirebaseActive && db) {
       try {
-        await updateDoc(doc(db, "kbc_users", username.toLowerCase()), {
-          lifelines
-        });
+        await updateDoc(doc(db, "kbc_users", username.toLowerCase()), { lifelines });
       } catch (e) {
         console.error("Firestore lifeline update error", e);
       }
