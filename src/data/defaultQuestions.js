@@ -1,4 +1,4 @@
-export const KBC_PRIZE_LADDER = [
+export const PRIZE_LADDER = [
   { level: 1, prize: "₹1,000", safe: false },
   { level: 2, prize: "₹2,000", safe: false },
   { level: 3, prize: "₹3,000", safe: false },

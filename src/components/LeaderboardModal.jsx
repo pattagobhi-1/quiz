@@ -16,37 +16,37 @@ export default function LeaderboardModal({ isOpen, onClose, participants = [] })
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1E0D33]/85 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-[#31124A] border border-[#EEC37D]/30 rounded-3xl shadow-[0_16px_50px_rgba(14,5,25,0.7)] overflow-hidden flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2D3250]/30 backdrop-blur-md animate-fadeIn">
+      <div className="relative w-full max-w-lg bg-white border border-[#5B6BC0]/15 rounded-3xl shadow-[0_16px_50px_rgba(45,50,80,0.12)] overflow-hidden flex flex-col max-h-[85vh]">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full bg-[#1E0D33]/60 text-[#E1DAE9] hover:text-[#FDF2E5] hover:bg-[#4C1B56] transition-colors cursor-pointer"
+          className="absolute top-4 right-4 p-1.5 rounded-full bg-[#F0F2F8] text-[#6E7599] hover:text-[#2D3250] hover:bg-[#E8EAF4] transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-[#EEC37D]/15 text-center">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-[#4C1B56] border border-[#EEC37D]/30 p-1 flex items-center justify-center mb-2">
+        <div className="p-6 pb-4 border-b border-[#5B6BC0]/10 text-center">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-[#5B6BC0]/10 border border-[#5B6BC0]/15 p-1 flex items-center justify-center mb-2">
             <img src={sjcLogo} alt="SJC Crest" className="w-full h-full object-contain filter drop-shadow" />
           </div>
-          <span className="text-xs uppercase tracking-wider text-[#EEC37D] font-semibold block mb-0.5">
+          <span className="text-xs uppercase tracking-wider text-[#5B6BC0] font-semibold block mb-0.5">
             St. Joseph's College, Allahabad
           </span>
           <h2 className="text-xl font-bold text-gold-gradient font-serif">
-            Josephest 2026 Standings
+            Expressions 2026 Standings
           </h2>
-          <p className="text-xs text-[#E1DAE9]/60 mt-0.5">Live Team Scores & Rankings</p>
+          <p className="text-xs text-[#6E7599] mt-0.5">Live Team Scores & Rankings</p>
 
           <div className="mt-4 relative max-w-xs mx-auto">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#EEC37D]/50" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#5B6BC0]/40" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Filter teams..."
-              className="w-full pl-8 pr-3 py-1.5 bg-[#1E0D33] border border-[#EEC37D]/20 rounded-xl text-xs text-[#FDF2E5] outline-none focus:border-[#EEC37D]"
+              className="w-full pl-8 pr-3 py-1.5 bg-[#F0F2F8] border border-[#5B6BC0]/15 rounded-xl text-xs text-[#2D3250] outline-none focus:border-[#5B6BC0]"
             />
           </div>
         </div>
@@ -54,7 +54,7 @@ export default function LeaderboardModal({ isOpen, onClose, participants = [] })
         {/* Standings List */}
         <div className="p-4 overflow-y-auto flex-1 space-y-2">
           {filtered.length === 0 ? (
-            <p className="text-center text-[#E1DAE9]/40 text-xs py-8">No teams found.</p>
+            <p className="text-center text-[#A8B0CC] text-xs py-8">No teams found.</p>
           ) : (
             filtered.map((user, idx) => {
               const rank = idx + 1;
@@ -65,21 +65,21 @@ export default function LeaderboardModal({ isOpen, onClose, participants = [] })
                   key={user.username}
                   className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
                     isFirst 
-                      ? 'bg-[#4C1B56]/60 border-[#EEC37D]/40' 
-                      : 'bg-[#1E0D33]/40 border-[#EEC37D]/10 hover:bg-[#4C1B56]/30'
+                      ? 'bg-[#5B6BC0]/8 border-[#5B6BC0]/25' 
+                      : 'bg-[#F0F2F8]/60 border-[#5B6BC0]/8 hover:bg-[#5B6BC0]/5'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
-                      isFirst ? 'bg-[#EEC37D] text-[#1E0D33]' : 'bg-[#1E0D33] text-[#E1DAE9]/60'
+                      isFirst ? 'bg-[#5B6BC0] text-white' : 'bg-[#F0F2F8] text-[#6E7599]'
                     }`}>
                       {rank}
                     </span>
                     <div>
-                      <span className="text-xs font-semibold text-[#FDF2E5] block">
+                      <span className="text-xs font-semibold text-[#2D3250] block">
                         {user.displayName || user.username}
                       </span>
-                      <span className="text-[10px] text-[#E1DAE9]/50 block">
+                      <span className="text-[10px] text-[#6E7599] block">
                         @{user.username} {user.college ? `• ${user.college}` : ''}
                       </span>
                     </div>
@@ -89,7 +89,7 @@ export default function LeaderboardModal({ isOpen, onClose, participants = [] })
                     <span className="text-xs font-bold text-gold-metallic">
                       {user.score || 0} pts
                     </span>
-                    <span className="text-[10px] text-[#EEC37D] block font-mono">
+                    <span className="text-[10px] text-[#5B6BC0] block font-mono">
                       Lvl {user.currentLevel || 1}
                     </span>
                   </div>

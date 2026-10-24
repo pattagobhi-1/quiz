@@ -9,10 +9,11 @@ import {
   deleteDoc
 } from "firebase/firestore";
 import { DEFAULT_QUESTIONS } from "../data/defaultQuestions";
+import { hashPassword } from "../utils/crypto";
 
 // Broadcast Channel for multi-tab / local simulation
 const syncChannel = typeof window !== 'undefined' && window.BroadcastChannel 
-  ? new BroadcastChannel("kbc_fest_channel") 
+  ? new BroadcastChannel("quiz_fest_channel") 
   : null;
 
 export const INITIAL_GAME_STATE = {
@@ -28,14 +29,15 @@ export const INITIAL_GAME_STATE = {
   updatedAt: Date.now()
 };
 
-const DEFAULT_ADMIN_PASS = "98384";
+// The canonical admin password — only the hash is ever stored
+const DEFAULT_ADMIN_PASS = "adm-sjc-79856";
 
 const KEYS = {
-  GAME_STATE: "kbc_local_game_state",
-  QUESTIONS: "kbc_local_questions",
-  USERS: "kbc_local_users",
-  RESPONSES: "kbc_local_responses",
-  ADMIN_PASSWORD: "kbc_local_admin_password"
+  GAME_STATE: "quiz_local_game_state",
+  QUESTIONS: "quiz_local_questions",
+  USERS: "quiz_local_users",
+  RESPONSES: "quiz_local_responses",
+  ADMIN_PASSWORD_HASH: "quiz_local_admin_password_hash"
 };
 
 function getLocal(key, defaultValue) {
@@ -65,32 +67,64 @@ if (!localStorage.getItem(KEYS.QUESTIONS)) {
 if (!localStorage.getItem(KEYS.GAME_STATE)) {
   localStorage.setItem(KEYS.GAME_STATE, JSON.stringify(INITIAL_GAME_STATE));
 }
-if (!localStorage.getItem(KEYS.ADMIN_PASSWORD)) {
-  localStorage.setItem(KEYS.ADMIN_PASSWORD, JSON.stringify(DEFAULT_ADMIN_PASS));
-}
+
+// Seed admin password hash on first run (async, fire-and-forget)
+(async function seedAdminPasswordHash() {
+  const existing = getLocal(KEYS.ADMIN_PASSWORD_HASH, null);
+  // If no hash exists, or it's the old plain text format (< 64 chars), migrate
+  if (!existing || existing.length < 64) {
+    const hash = await hashPassword(DEFAULT_ADMIN_PASS);
+    setLocal(KEYS.ADMIN_PASSWORD_HASH, hash);
+
+    // Also seed Firestore if connected
+    if (isFirebaseActive && db) {
+      try {
+        await setDoc(doc(db, "kbc_system", "settings"), { adminPasswordHash: hash }, { merge: true });
+      } catch (e) {
+        console.warn("Failed to seed admin password hash in Firestore:", e);
+      }
+    }
+  }
+})();
 
 // -------------------------------------------------------------
-// 1. ADMIN PASSWORD MANAGEMENT
+// 1. ADMIN PASSWORD HASH MANAGEMENT (Read-only from client)
 // -------------------------------------------------------------
-export function subscribeAdminPassword(callback) {
+export function subscribeAdminPasswordHash(callback) {
   if (isFirebaseActive && db) {
-    const unsub = onSnapshot(doc(db, "kbc_system", "settings"), (docSnap) => {
-      if (docSnap.exists() && docSnap.data().adminPassword) {
-        callback(docSnap.data().adminPassword);
+    const unsub = onSnapshot(doc(db, "kbc_system", "settings"), async (docSnap) => {
+      if (docSnap.exists() && docSnap.data().adminPasswordHash) {
+        callback(docSnap.data().adminPasswordHash);
       } else {
-        const localPass = getLocal(KEYS.ADMIN_PASSWORD, DEFAULT_ADMIN_PASS);
-        setDoc(doc(db, "kbc_system", "settings"), { adminPassword: localPass }, { merge: true });
-        callback(localPass);
+        // No hash in Firestore — compute and store
+        const hash = await hashPassword(DEFAULT_ADMIN_PASS);
+        setDoc(doc(db, "kbc_system", "settings"), { adminPasswordHash: hash }, { merge: true });
+        callback(hash);
       }
-    }, (err) => {
+    }, async (err) => {
       console.warn("Firestore admin settings snapshot error:", err);
-      callback(getLocal(KEYS.ADMIN_PASSWORD, DEFAULT_ADMIN_PASS));
+      // Fallback to local
+      let hash = getLocal(KEYS.ADMIN_PASSWORD_HASH, null);
+      if (!hash || hash.length < 64) {
+        hash = await hashPassword(DEFAULT_ADMIN_PASS);
+        setLocal(KEYS.ADMIN_PASSWORD_HASH, hash);
+      }
+      callback(hash);
     });
     return unsub;
   } else {
-    callback(getLocal(KEYS.ADMIN_PASSWORD, DEFAULT_ADMIN_PASS));
+    // Local mode
+    (async () => {
+      let hash = getLocal(KEYS.ADMIN_PASSWORD_HASH, null);
+      if (!hash || hash.length < 64) {
+        hash = await hashPassword(DEFAULT_ADMIN_PASS);
+        setLocal(KEYS.ADMIN_PASSWORD_HASH, hash);
+      }
+      callback(hash);
+    })();
+
     const handleMessage = (e) => {
-      if (e.data && e.data.type === "LOCAL_SYNC" && e.data.key === KEYS.ADMIN_PASSWORD) {
+      if (e.data && e.data.type === "LOCAL_SYNC" && e.data.key === KEYS.ADMIN_PASSWORD_HASH) {
         callback(e.data.value);
       }
     };
@@ -101,17 +135,10 @@ export function subscribeAdminPassword(callback) {
   }
 }
 
-export async function updateAdminPassword(newPassword) {
-  setLocal(KEYS.ADMIN_PASSWORD, newPassword);
-  if (isFirebaseActive && db) {
-    try {
-      await setDoc(doc(db, "kbc_system", "settings"), { adminPassword: newPassword }, { merge: true });
-    } catch (err) {
-      console.error("Firestore updateAdminPassword error:", err);
-    }
-  }
-  return true;
-}
+// NOTE: updateAdminPassword has been removed.
+// The admin password can only be changed by directly modifying the
+// Firestore document "kbc_system/settings" > adminPasswordHash field
+// with a new SHA-256 hash. This prevents UI-level password changes.
 
 // -------------------------------------------------------------
 // 2. GAME STATE SUBSCRIPTION & UPDATES

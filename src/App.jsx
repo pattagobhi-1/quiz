@@ -11,7 +11,7 @@ import {
   subscribeQuestions, 
   subscribeParticipants, 
   subscribeQuestionResponses,
-  subscribeAdminPassword,
+  subscribeAdminPasswordHash,
   INITIAL_GAME_STATE 
 } from './services/quizService';
 import { DEFAULT_QUESTIONS } from './data/defaultQuestions';
@@ -36,7 +36,7 @@ export default function App() {
 
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('kbc_active_user');
+      const saved = localStorage.getItem('quiz_active_user');
       return saved ? JSON.parse(saved) : null;
     } catch (e) {
       return null;
@@ -45,14 +45,14 @@ export default function App() {
 
   const [adminUser, setAdminUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('kbc_admin_auth');
+      const saved = localStorage.getItem('quiz_admin_auth');
       return saved ? JSON.parse(saved) : null;
     } catch (e) {
       return null;
     }
   });
 
-  const [adminPassword, setAdminPassword] = useState('98384');
+  const [adminPasswordHash, setAdminPasswordHash] = useState(null);
   const [gameState, setGameState] = useState(INITIAL_GAME_STATE);
   const [questions, setQuestions] = useState(DEFAULT_QUESTIONS);
   const [participants, setParticipants] = useState([]);
@@ -74,10 +74,10 @@ export default function App() {
     };
   }, []);
 
-  // 1. Subscribe to Admin Password
+  // 1. Subscribe to Admin Password Hash
   useEffect(() => {
-    const unsub = subscribeAdminPassword((pass) => {
-      if (pass) setAdminPassword(pass);
+    const unsub = subscribeAdminPasswordHash((hash) => {
+      if (hash) setAdminPasswordHash(hash);
     });
     return () => unsub && unsub();
   }, []);
@@ -127,7 +127,7 @@ export default function App() {
   const handleContestantLoginSuccess = (user) => {
     setCurrentUser(user);
     try {
-      localStorage.setItem('kbc_active_user', JSON.stringify(user));
+      localStorage.setItem('quiz_active_user', JSON.stringify(user));
     } catch (e) {}
   };
 
@@ -135,7 +135,7 @@ export default function App() {
   const handleAdminLoginSuccess = (user) => {
     setAdminUser(user);
     try {
-      localStorage.setItem('kbc_admin_auth', JSON.stringify(user));
+      localStorage.setItem('quiz_admin_auth', JSON.stringify(user));
     } catch (e) {}
   };
 
@@ -143,18 +143,18 @@ export default function App() {
     if (currentRoute === 'admin') {
       setAdminUser(null);
       try {
-        localStorage.removeItem('kbc_admin_auth');
+        localStorage.removeItem('quiz_admin_auth');
       } catch (e) {}
     } else {
       setCurrentUser(null);
       try {
-        localStorage.removeItem('kbc_active_user');
+        localStorage.removeItem('quiz_active_user');
       } catch (e) {}
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col samavaya-bg text-[#FDF2E5] selection:bg-[#EEC37D] selection:text-[#1E0D33]">
+    <div className="min-h-screen w-full flex flex-col samavaya-bg text-[#2D3250] selection:bg-[#7C4DFF]/20 selection:text-[#1B1F3B]">
       <Header
         currentRole={currentRoute}
         currentUser={currentRoute === 'admin' ? adminUser : currentUser}
@@ -194,19 +194,18 @@ export default function App() {
                 questions={questions}
                 participants={participants}
                 allResponses={allResponses}
-                adminPassword={adminPassword}
               />
             ) : (
               <div className="flex-1 flex items-center justify-center p-4">
                 <div className="max-w-md w-full p-8 text-center samavaya-card rounded-3xl">
-                  <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-[#4C1B56] border border-[#EEC37D]/30 flex items-center justify-center text-[#FBE0A4]">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-[#5B6BC0]/10 border border-[#5B6BC0]/20 flex items-center justify-center text-[#5B6BC0]">
                     🔒
                   </div>
-                  <h3 className="text-lg font-bold text-[#FDF2E5] mb-1 font-serif">
+                  <h3 className="text-lg font-bold text-[#2D3250] mb-1 font-serif">
                     Host Console Locked
                   </h3>
-                  <p className="text-xs text-[#E1DAE9]/70 mb-5 leading-relaxed">
-                    This control panel is restricted to the Josephest 2026 quiz master. Please authenticate with your master authorization key.
+                  <p className="text-xs text-[#6E7599] mb-5 leading-relaxed">
+                    This control panel is restricted to the Josephest 2026 Expressions quiz master. Please authenticate with your master authorization key.
                   </p>
                   <button
                     onClick={() => setIsLoginModalOpen(true)}
@@ -227,7 +226,7 @@ export default function App() {
         onClose={() => setIsLoginModalOpen(false)}
         onLoginSuccess={currentRoute === 'admin' ? handleAdminLoginSuccess : handleContestantLoginSuccess}
         participants={participants}
-        adminPassword={adminPassword}
+        adminPasswordHash={adminPasswordHash}
         role={currentRoute === 'admin' ? 'admin' : 'contestant'}
       />
 

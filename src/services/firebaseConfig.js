@@ -24,7 +24,7 @@ export const DEFAULT_FIREBASE_CONFIG = {
   measurementId: "G-EYQ6V2BVYS"
 };
 
-const STORAGE_KEY = "kbc_quiz_firebase_config";
+const STORAGE_KEY = "quiz_firebase_config";
 
 export function getSavedFirebaseConfig() {
   try {

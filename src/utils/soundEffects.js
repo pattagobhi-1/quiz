@@ -1,4 +1,4 @@
-// Synthesized KBC-style sound effects using the Web Audio API
+// Synthesized quiz-style sound effects using the Web Audio API
 // No external MP3 files needed - 100% reliable on GitHub Pages and offline!
 
 class SoundManager {
